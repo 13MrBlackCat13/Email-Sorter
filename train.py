@@ -1,4 +1,6 @@
 import os
+import sys
+import argparse
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
@@ -7,6 +9,7 @@ from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.model_selection import train_test_split
 import joblib
 import numpy as np
+
 
 def load_data(data_dir):
     categories = os.listdir(data_dir)
@@ -52,6 +55,10 @@ def test_model(model, X_test_vectorized, y_test):
     return accuracy
 
 def main():
+    parser = argparse.ArgumentParser(description='Train and save text classification models')
+    parser.add_argument('-train', choices=['all', 'lr', 'svm', 'rf', 'gb'], default='all', help='Specify which model to train')
+    args = parser.parse_args()
+
     data_dir_text = os.path.join(os.getcwd(), 'text')
     data_dir_emails = os.path.join(os.getcwd(), 'emails')
 
@@ -72,53 +79,38 @@ def main():
     X_train_vectorized_emails = vectorizer_emails.fit_transform(X_train_emails)
     X_test_vectorized_emails = vectorizer_emails.transform(X_test_emails)
 
-    # Train and test logistic regression model for text
-    model_lr_text = train_model('lr', X_train_vectorized_text, y_train_text)
-    accuracy_lr_text = test_model(model_lr_text, X_test_vectorized_text, y_test_text)
-    print(f'Logistic Regression Accuracy for Text: {accuracy_lr_text:.2f}')
-    joblib.dump(model_lr_text, 'models/text-model-lr.pkl')
+    models_to_train = []
 
-    # Train and test logistic regression model for emails
-    model_lr_emails = train_model('lr', X_train_vectorized_emails, y_train_emails)
-    accuracy_lr_emails = test_model(model_lr_emails, X_test_vectorized_emails, y_test_emails)
-    print(f'Logistic Regression Accuracy for Emails: {accuracy_lr_emails:.2f}')
-    joblib.dump(model_lr_emails, 'models/emails-model-lr.pkl')
+    if args.train == 'all':
+        models_to_train = ['lr', 'svm', 'rf', 'gb']
+    else:
+        models_to_train = [args.train]
 
-    # Train and test support vector machine model for text
-    model_svm_text = train_model('svm', X_train_vectorized_text, y_train_text)
-    accuracy_svm_text = test_model(model_svm_text, X_test_vectorized_text, y_test_text)
-    print(f'SVM Accuracy for Text: {accuracy_svm_text:.2f}')
-    joblib.dump(model_svm_text, 'models/text-model-svm.pkl')
+    for model_name in models_to_train:
+        if model_name == 'lr':
+            model_text = train_model('lr', X_train_vectorized_text, y_train_text)
+            model_emails = train_model('lr', X_train_vectorized_emails, y_train_emails)
+        elif model_name == 'svm':
+            model_text = train_model('svm', X_train_vectorized_text, y_train_text)
+            model_emails = train_model('svm', X_train_vectorized_emails, y_train_emails)
+        elif model_name == 'rf':
+            model_text = train_model('rf', X_train_vectorized_text, y_train_text)
+            model_emails = train_model('rf', X_train_vectorized_emails, y_train_emails)
+        elif model_name == 'gb':
+            model_text = train_model('gb', X_train_vectorized_text, y_train_text)
+            model_emails = train_model('gb', X_train_vectorized_emails, y_train_emails)
+        else:
+            print(f"Invalid model name: {model_name}")
+            continue
 
-    # Train and test support vector machine model for emails
-    model_svm_emails = train_model('svm', X_train_vectorized_emails, y_train_emails)
-    accuracy_svm_emails = test_model(model_svm_emails, X_test_vectorized_emails, y_test_emails)
-    print(f'SVM Accuracy for Emails: {accuracy_svm_emails:.2f}')
-    joblib.dump(model_svm_emails, 'models/emails-model-svm.pkl')
+        accuracy_text = test_model(model_text, X_test_vectorized_text, y_test_text)
+        accuracy_emails = test_model(model_emails, X_test_vectorized_emails, y_test_emails)
 
-    # Train and test random forest model for text
-    model_rf_text = train_model('rf', X_train_vectorized_text, y_train_text)
-    accuracy_rf_text = test_model(model_rf_text, X_test_vectorized_text, y_test_text)
-    print(f'Random Forest Accuracy for Text: {accuracy_rf_text:.2f}')
-    joblib.dump(model_rf_text, 'models/text-model-rf.pkl')
+        print(f'{model_name.upper()} Accuracy for Text: {accuracy_text:.2f}')
+        print(f'{model_name.upper()} Accuracy for Emails: {accuracy_emails:.2f}')
 
-    # Train and test random forest model for emails
-    model_rf_emails = train_model('rf', X_train_vectorized_emails, y_train_emails)
-    accuracy_rf_emails = test_model(model_rf_emails, X_test_vectorized_emails, y_test_emails)
-    print(f'Random Forest Accuracy for Emails: {accuracy_rf_emails:.2f}')
-    joblib.dump(model_rf_emails, 'models/emails-model-rf.pkl')
-
-    # Train and test gradient boosting model for text
-    model_gb_text = train_model('gb', X_train_vectorized_text, y_train_text)
-    accuracy_gb_text = test_model(model_gb_text, X_test_vectorized_text, y_test_text)
-    print(f'Gradient Boosting Accuracy for Text: {accuracy_gb_text:.2f}')
-    joblib.dump(model_gb_text, 'models/text-model-gb.pkl')
-
-    # Train and test gradient boosting model for emails
-    model_gb_emails = train_model('gb', X_train_vectorized_emails, y_train_emails)
-    accuracy_gb_emails = test_model(model_gb_emails, X_test_vectorized_emails, y_test_emails)
-    print(f'Gradient Boosting Accuracy for Emails: {accuracy_gb_emails:.2f}')
-    joblib.dump(model_gb_emails, 'models/emails-model-gb.pkl')
+        joblib.dump(model_text, f'models/text-model-{model_name}.pkl')
+        joblib.dump(model_emails, f'models/emails-model-{model_name}.pkl')
 
     print("Models trained and saved successfully")
 
