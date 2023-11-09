@@ -1,27 +1,29 @@
-import email
 import json
 import os
 import subprocess
 import tempfile
-from collections import OrderedDict
-
-import joblib
-import numpy as np
 from flask import Flask, request, jsonify, abort
 from sklearn.svm import SVC
-import sys
+import joblib
+import numpy as np
 
 app = Flask(__name__)
 
-# Load the trained models and vectorizer
-rf_model_text, vectorizer_text = joblib.load('models/text-model-rf.pkl'), joblib.load('models/text-vectorizer.pkl')
-rf_model_emails, vectorizer_emails = joblib.load('models/emails-model-rf.pkl'), joblib.load('models/emails-vectorizer.pkl')
-lr_model_text, vectorizer_text = joblib.load('models/text-model-lr.pkl'), joblib.load('models/text-vectorizer.pkl')
-lr_model_emails, vectorizer_emails = joblib.load('models/emails-model-lr.pkl'), joblib.load('models/emails-vectorizer.pkl')
-svm_model_text, vectorizer_text = joblib.load('models/text-model-svm.pkl'), joblib.load('models/text-vectorizer.pkl')
-svm_model_emails, vectorizer_emails = joblib.load('models/emails-model-svm.pkl'), joblib.load('models/emails-vectorizer.pkl')
-gb_model_text, vectorizer_text = joblib.load('models/text-model-gb.pkl'), joblib.load('models/text-vectorizer.pkl')
-gb_model_emails, vectorizer_emails = joblib.load('models/emails-model-gb.pkl'), joblib.load('models/emails-vectorizer.pkl')
+MODELS_CACHE = {}
+VECTORIZERS_CACHE = {}
+TEXT_VECTORIZATION_CACHE = {}
+
+def load_model_and_vectorizer(model_name):
+    # Кеширование моделей и векторизаторов для повышения эффективности
+    if model_name not in MODELS_CACHE:
+        MODELS_CACHE[model_name] = joblib.load(f'models/{model_name}-model.pkl')
+        VECTORIZERS_CACHE[model_name] = joblib.load(f'models/{model_name}-vectorizer.pkl')
+    return MODELS_CACHE[model_name], VECTORIZERS_CACHE[model_name]
+
+# Предварительная загрузка моделей и векторизаторов
+model_names = ['text-rf', 'emails-rf', 'text-lr', 'emails-lr', 'text-svm', 'emails-svm', 'text-gb', 'emails-gb']
+for name in model_names:
+    load_model_and_vectorizer(name)
 
 # Define the super token
 SUPER_TOKEN = 'devtest'
