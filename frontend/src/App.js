@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import EmailList from './components/EmailList';
 import axios from 'axios';
+import config from './config';
 
 function App() {
   const [emails, setEmails] = useState([]);
@@ -12,7 +13,7 @@ function App() {
 
   const fetchEmails = async () => {
     try {
-      const response = await axios.get('/api/emails');
+      const response = await axios.get(`${config.API_URL}/get_emails`);
       setEmails(response.data);
       setLoading(false);
     } catch (error) {
@@ -23,7 +24,7 @@ function App() {
 
   const handleClassify = async (emailId, content) => {
     try {
-      const response = await axios.post('/api/classify', { content });
+      const response = await axios.post(`${config.API_URL}/classify_email`, { content });
       alert(`Classification results:\n${JSON.stringify(response.data, null, 2)}`);
     } catch (error) {
       console.error('Error classifying email:', error);
@@ -32,7 +33,7 @@ function App() {
 
   const handleMove = async (emailId, category) => {
     try {
-      await axios.post('/api/move', { id: emailId, category });
+      await axios.post(`${config.API_URL}/move_email`, { id: emailId, category });
       setEmails(emails.filter(email => email.id !== emailId));
     } catch (error) {
       console.error('Error moving email:', error);
@@ -40,13 +41,13 @@ function App() {
   };
 
   const handleRetrain = async () => {
-    try {
-      const response = await axios.post('/api/retrain');
-      alert(response.data.message);
-    } catch (error) {
-      console.error('Error retraining model:', error);
-    }
-  };
+  try {
+    const response = await axios.post('/train');
+    alert(response.data.message);
+  } catch (error) {
+    console.error('Error retraining model:', error);
+  }
+};
 
   return (
     <div className="container mx-auto p-4">

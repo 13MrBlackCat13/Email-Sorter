@@ -7,6 +7,8 @@ import os
 from src.services.notification_service import notification_service
 from src.services.auto_retrain_service import auto_retrain_service
 from src.services.data_processor import create_directory_structure, process_dataset, process_email
+from flask import current_app
+from werkzeug.utils import secure_filename
 
 api_bp = Blueprint('api', __name__)
 classifier = EmailClassifier()
@@ -210,26 +212,54 @@ def index():
 def sort():
     return render_template('sort.html')
 
+
 @api_bp.route('/get_emails', methods=['GET'])
 def get_emails():
-    raw_data_dir = 'data/raw'
+    raw_data_dir = current_app.config.get('DATA_DIR', 'data/raw')
     emails = []
-    for category in os.listdir(raw_data_dir):
+
+    # Проверяем папку Unsorted
+    unsorted_path = os.path.join(raw_data_dir, 'Unsorted')
+    if os.path.exists(unsorted_path):
+        for filename in os.listdir(unsorted_path):
+            file_path = os.path.join(unsorted_path, filename)
+            try:
+                if os.path.isfile(file_path):
+                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                        content = f.read()
+                    emails.append({
+                        'filename': filename,
+                        'category': 'Unsorted',
+                        'content': content[:200] + '...'  # Preview of content
+                    })
+            except Exception as e:
+                current_app.logger.error(f"Error reading file {file_path}: {str(e)}")
+
+    # Проверяем остальные категории
+    categories = ['Входящие', 'Рассылки', 'Социальные сети', 'Чеки_Квитанции', 'Новости', 'Доставка', 'Госписьма',
+                  'Учёба', 'Игры', 'Spam/Мошенничество', 'Spam/Обычный']
+
+    for category in categories:
         category_path = os.path.join(raw_data_dir, category)
-        if os.path.isdir(category_path):
+        if os.path.exists(category_path):
             for filename in os.listdir(category_path):
                 file_path = os.path.join(category_path, filename)
-                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                    content = f.read()
-                emails.append({
-                    'filename': filename,
-                    'category': category,
-                    'content': content[:200] + '...'  # Preview of content
-                })
+                try:
+                    if os.path.isfile(file_path):
+                        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                            content = f.read()
+                        emails.append({
+                            'filename': filename,
+                            'category': category,
+                            'content': content[:200] + '...'  # Preview of content
+                        })
+                except Exception as e:
+                    current_app.logger.error(f"Error reading file {file_path}: {str(e)}")
+
     return jsonify(emails)
 
 @api_bp.route('/classify_email', methods=['POST'])
-def classify_email():
+def classify_email_general():
     data = request.json
     if not data or 'content' not in data:
         return jsonify({"error": "No content provided"}), 400
@@ -254,3 +284,19 @@ def move_email():
 
     os.rename(from_path, to_path)
     return jsonify({"message": "Email moved successfully"})
+
+@api_bp.route('/upload_email', methods=['POST'])
+def upload_email():
+    if 'file' not in request.files:
+        return jsonify({"error": "No file part"}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+    if file:
+        filename = secure_filename(file.filename)
+        unsorted_path = os.path.join(current_app.config.get('DATA_DIR', 'data/raw'), 'Unsorted')
+        if not os.path.exists(unsorted_path):
+            os.makedirs(unsorted_path)
+        file_path = os.path.join(unsorted_path, filename)
+        file.save(file_path)
+        return jsonify({"message": "File uploaded successfully"}), 200

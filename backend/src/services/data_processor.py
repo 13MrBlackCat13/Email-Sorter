@@ -6,7 +6,7 @@ import shutil
 
 def create_directory_structure():
     directories = [
-        'data/raw', 'data/processed',
+        'data/raw', 'data/processed', 'data/raw/Unsorted',
         'models', 'logs',
         'data/raw/Входящие', 'data/raw/Рассылки', 'data/raw/Социальные сети',
         'data/raw/Чеки_Квитанции', 'data/raw/Новости', 'data/raw/Доставка',
