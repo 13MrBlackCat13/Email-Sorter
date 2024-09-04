@@ -4,6 +4,7 @@ import jwt
 from datetime import datetime, timedelta
 from functools import wraps
 from src.models.user import User
+from src.models.user import db
 from config.config import Config
 
 auth_bp = Blueprint('auth', __name__)
