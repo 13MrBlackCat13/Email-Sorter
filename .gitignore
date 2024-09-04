@@ -1,29 +1,73 @@
-vectorizer.pkl
-text.7z
-model.pkl
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-v3/
-v2/
-Unsorted/*
-text/Games/*
-text/Newsletters/*
-text/Notifications/*
-text/Receipts/*
-text/Social/*
-text/Spam/*
-Sorted/Games/*
-Sorted/Newsletters/*
-Sorted/Notifications/*
-Sorted/Receipts/*
-Sorted/Social/*
-Sorted/Spam/*
-emails/Games/*
-emails/Newsletters/*
-emails/Notifications/*
-emails/Receipts/*
-emails/Social/*
-emails/Spam/*
-Спорное/
+# Virtual environment
+venv/
+ENV/
+
+# PyCharm
 .idea/
-models/*
-!models/models.txt
+
+# VS Code
+.vscode/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Project specific
+backend/data/raw/*
+backend/data/processed/*
+backend/logs/*
+backend/models/*
+!backend/models/.gitkeep
+
+# Frontend
+frontend/node_modules/
+frontend/build/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Config files
+backend/config/config.py
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+
+# Database
+*.db
+*.sqlite3

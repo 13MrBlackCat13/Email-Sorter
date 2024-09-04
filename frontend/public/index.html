@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Sorter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+</head>
+<body class="bg-gray-100">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        function App() {
+            const [emails, setEmails] = React.useState([]);
+            const [loading, setLoading] = React.useState(true);
+
+            React.useEffect(() => {
+                fetchEmails();
+            }, []);
+
+            const fetchEmails = async () => {
+                try {
+                    const response = await fetch('/api/emails');
+                    const data = await response.json();
+                    setEmails(data);
+                    setLoading(false);
+                } catch (error) {
+                    console.error('Error fetching emails:', error);
+                    setLoading(false);
+                }
+            };
+
+            const handleClassify = async (emailId, content) => {
+                try {
+                    const response = await fetch('/api/classify', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ content }),
+                    });
+                    const data = await response.json();
+                    alert(`Classification results:\n${JSON.stringify(data, null, 2)}`);
+                } catch (error) {
+                    console.error('Error classifying email:', error);
+                }
+            };
+
+            const handleMove = async (emailId, category) => {
+                try {
+                    await fetch('/api/move', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ id: emailId, category }),
+                    });
+                    setEmails(emails.filter(email => email.id !== emailId));
+                } catch (error) {
+                    console.error('Error moving email:', error);
+                }
+            };
+
+            const handleRetrain = async () => {
+                try {
+                    const response = await fetch('/api/retrain', {
+                        method: 'POST',
+                    });
+                    const data = await response.json();
+                    alert(data.message);
+                } catch (error) {
+                    console.error('Error retraining model:', error);
+                }
+            };
+
+            return (
+                <div className="container mx-auto p-4">
+                    <h1 className="text-3xl font-bold mb-4">Email Sorter</h1>
+                    {loading ? (
+                        <p>Loading emails...</p>
+                    ) : (
+                        <>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {emails.map(email => (
+                                    <div key={email.id} className="bg-white p-4 rounded shadow">
+                                        <h2 className="font-bold text-lg">{email.subject}</h2>
+                                        <p className="mt-2 text-sm text-gray-600">{email.content}</p>
+                                        <div className="mt-4 flex justify-between items-center">
+                                            <button
+                                                className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                                                onClick={() => handleClassify(email.id, email.content)}
+                                            >
+                                                Classify
+                                            </button>
+                                            <select
+                                                className="border rounded px-2 py-1"
+                                                onChange={(e) => handleMove(email.id, e.target.value)}
+                                                defaultValue=""
+                                            >
+                                                <option value="" disabled>Move to...</option>
+                                                <option value="Входящие">Входящие</option>
+                                                <option value="Рассылки">Рассылки</option>
+                                                <option value="Социальные сети">Социальные сети</option>
+                                                <option value="Чеки_Квитанции">Чеки/Квитанции</option>
+                                                <option value="Новости">Новости</option>
+                                                <option value="Доставка">Доставка</option>
+                                                <option value="Госписьма">Госписьма</option>
+                                                <option value="Учёба">Учёба</option>
+                                                <option value="Игры">Игры</option>
+                                                <option value="Spam/Мошенничество">Spam/Мошенничество</option>
+                                                <option value="Spam/Обычный">Spam/Обычный</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <button
+                                className="mt-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                                onClick={handleRetrain}
+                            >
+                                Retrain Model
+                            </button>
+                        </>
+                    )}
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
